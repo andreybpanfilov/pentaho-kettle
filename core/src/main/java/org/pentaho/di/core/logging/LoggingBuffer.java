@@ -55,7 +55,13 @@ public class LoggingBuffer {
 
   private LoggingRegistry loggingRegistry = LoggingRegistry.getInstance();
 
+  private boolean bufferLoggingDisabled;
+
   public LoggingBuffer( int bufferSize ) {
+    this( bufferSize, false );
+  }
+
+  public LoggingBuffer( int bufferSize, boolean bufferLoggingDisabled ) {
     this.bufferSize = bufferSize;
     // The buffer overflow protection allows it to be overflowed for 1 item within a single thread.
     // Considering a possible high contention, let's set it's max overflow size to be 10%.
@@ -63,6 +69,7 @@ public class LoggingBuffer {
     buffer = new ArrayList<>( (int) ( bufferSize * 1.1 ) );
     layout = new KettleLogLayout( true );
     eventListeners = new CopyOnWriteArrayList<>();
+    this.bufferLoggingDisabled = bufferLoggingDisabled;
   }
 
   /**
@@ -152,15 +159,17 @@ public class LoggingBuffer {
   }
 
   public void doAppend( KettleLoggingEvent event ) {
-    if ( event.getMessage() instanceof LogMessage ) {
-      lock.writeLock().lock();
-      try {
-        buffer.add( new BufferLine( event ) );
-        while ( bufferSize > 0 && buffer.size() > bufferSize ) {
-          buffer.remove( 0 );
+    if ( !bufferLoggingDisabled ) {
+      if ( event.getMessage() instanceof LogMessage ) {
+        lock.writeLock().lock();
+        try {
+          buffer.add( new BufferLine(event) );
+          while ( bufferSize > 0 && buffer.size() > bufferSize ) {
+            buffer.remove( 0 );
+          }
+        } finally {
+          lock.writeLock().unlock();
         }
-      } finally {
-        lock.writeLock().unlock();
       }
     }
   }
@@ -206,6 +215,10 @@ public class LoggingBuffer {
    */
   public void setMaxNrLines( int maxNrLines ) {
     this.bufferSize = maxNrLines;
+  }
+
+  public void setBufferLoggingDisabled(boolean bufferLoggingDisabled) {
+    this.bufferLoggingDisabled = bufferLoggingDisabled;
   }
 
   /**

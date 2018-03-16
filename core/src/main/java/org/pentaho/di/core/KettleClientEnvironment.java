@@ -33,6 +33,7 @@ import org.pentaho.di.core.encryption.TwoWayPasswordEncoderPluginType;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettlePluginException;
 import org.pentaho.di.core.extension.ExtensionPointPluginType;
+import org.pentaho.di.core.logging.BufferLoggingEventListener;
 import org.pentaho.di.core.logging.ConsoleLoggingEventListener;
 import org.pentaho.di.core.logging.KettleLogStore;
 import org.pentaho.di.core.logging.LoggingPluginInterface;
@@ -109,6 +110,11 @@ public class KettleClientEnvironment {
     if ( !"Y".equalsIgnoreCase( System.getProperty( Const.KETTLE_DISABLE_CONSOLE_LOGGING, "N" ) ) ) {
       KettleLogStore.getAppender().addLoggingEventListener( new ConsoleLoggingEventListener() );
     }
+
+    if ( !"Y".equalsIgnoreCase( System.getProperty( Const.KETTLE_DISABLE_BUFFER_LOGGING, "N" ) ) ) {
+      KettleLogStore.getAppender().addLoggingEventListener( new BufferLoggingEventListener() );
+    }
+
     KettleLogStore.getAppender().addLoggingEventListener( new Slf4jLoggingEventListener() );
 
     // Load plugins

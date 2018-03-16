@@ -63,8 +63,8 @@ public class KettleLogStore {
    * @param maxLogTimeoutMinutes
    *          The maximum time that a log line times out in Minutes.
    */
-  private KettleLogStore( int maxSize, int maxLogTimeoutMinutes, boolean redirectStdOut, boolean redirectStdErr ) {
-    this.appender = new LoggingBuffer( maxSize );
+  private KettleLogStore( int maxSize, int maxLogTimeoutMinutes, boolean bufferLoggingDisabled, boolean redirectStdOut, boolean redirectStdErr ) {
+    this.appender = new LoggingBuffer( maxSize, bufferLoggingDisabled );
     replaceLogCleaner( maxLogTimeoutMinutes );
 
     if ( redirectStdOut ) {
@@ -115,7 +115,8 @@ public class KettleLogStore {
    */
   public static void init( int maxSize, int maxLogTimeoutMinutes, boolean redirectStdOut, boolean redirectStdErr ) {
     if ( maxSize > 0 || maxLogTimeoutMinutes > 0 ) {
-      init0( maxSize, maxLogTimeoutMinutes, redirectStdOut, redirectStdErr );
+      boolean bufferLoggingDisabled = "Y".equalsIgnoreCase( EnvUtil.getSystemProperty( Const.KETTLE_DISABLE_BUFFER_LOGGING ) );
+      init0( maxSize, maxLogTimeoutMinutes, bufferLoggingDisabled, redirectStdOut, redirectStdErr );
     } else {
       init( redirectStdOut, redirectStdErr );
     }
@@ -150,9 +151,10 @@ public class KettleLogStore {
    */
   public static void init( boolean redirectStdOut, boolean redirectStdErr ) {
     int maxSize = Const.toInt( EnvUtil.getSystemProperty( Const.KETTLE_MAX_LOG_SIZE_IN_LINES ), 5000 );
+    boolean bufferLoggingDisabled = "Y".equalsIgnoreCase( EnvUtil.getSystemProperty( Const.KETTLE_DISABLE_BUFFER_LOGGING ) );
     int maxLogTimeoutMinutes =
       Const.toInt( EnvUtil.getSystemProperty( Const.KETTLE_MAX_LOG_TIMEOUT_IN_MINUTES ), 1440 );
-    init0( maxSize, maxLogTimeoutMinutes, redirectStdOut, redirectStdErr );
+    init0( maxSize, maxLogTimeoutMinutes, bufferLoggingDisabled, redirectStdOut, redirectStdErr );
   }
 
   /**
@@ -163,14 +165,15 @@ public class KettleLogStore {
    * @param maxLogTimeoutMinutes
    *          The maximum time that a log line times out in minutes
    */
-  private static synchronized void init0( int maxSize, int maxLogTimeoutMinutes, boolean redirectStdOut,
+  private static synchronized void init0( int maxSize, int maxLogTimeoutMinutes, boolean bufferLoggingDisabled, boolean redirectStdOut,
     boolean redirectStdErr ) {
     if ( store != null ) {
       // CentralLogStore already initialized. Just update the values.
       store.appender.setMaxNrLines( maxSize );
+      store.appender.setBufferLoggingDisabled( bufferLoggingDisabled );
       store.replaceLogCleaner( maxLogTimeoutMinutes );
     } else {
-      store = new KettleLogStore( maxSize, maxLogTimeoutMinutes, redirectStdOut, redirectStdErr );
+      store = new KettleLogStore( maxSize, maxLogTimeoutMinutes, bufferLoggingDisabled, redirectStdOut, redirectStdErr );
     }
     initialized.set( true );
   }

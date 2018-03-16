@@ -214,6 +214,8 @@ public class Job extends Thread implements VariableSpace, NamedParams, HasLogCha
 
   private int maxJobEntriesLogged;
 
+  private boolean bufferLoggingDisabled;
+
   private JobEntryCopy startJobEntryCopy;
   private Result startJobEntryResult;
 
@@ -278,6 +280,7 @@ public class Job extends Thread implements VariableSpace, NamedParams, HasLogCha
     batchId = -1;
     passedBatchId = -1;
     maxJobEntriesLogged = Const.toInt( EnvUtil.getSystemProperty( Const.KETTLE_MAX_JOB_ENTRIES_LOGGED ), 1000 );
+    bufferLoggingDisabled = "Y".equalsIgnoreCase( EnvUtil.getSystemProperty( Const.KETTLE_DISABLE_BUFFER_LOGGING ) );
 
     result = null;
     startJobEntryCopy = null;
@@ -768,15 +771,17 @@ public class Job extends Thread implements VariableSpace, NamedParams, HasLogCha
               "Job.Comment.JobFinished" ), null, jobEntryCopy.getName(), jobEntryCopy.getNr(), environmentSubstitute(
                   jobEntryCopy.getEntry().getFilename() ) );
       jobTracker.addJobTracker( new JobTracker( jobMeta, jerAfter ) );
-      synchronized ( jobEntryResults ) {
-        jobEntryResults.add( jerAfter );
+      if ( !bufferLoggingDisabled ) {
+        synchronized ( jobEntryResults ) {
+          jobEntryResults.add( jerAfter );
 
-        // Only keep the last X job entry results in memory
-        //
-        if ( maxJobEntriesLogged > 0 ) {
-          while ( jobEntryResults.size() > maxJobEntriesLogged ) {
-            // Remove the oldest.
-            jobEntryResults.removeFirst();
+          // Only keep the last X job entry results in memory
+          //
+          if ( maxJobEntriesLogged > 0 ) {
+            while ( jobEntryResults.size() > maxJobEntriesLogged ) {
+              // Remove the oldest.
+              jobEntryResults.removeFirst();
+            }
           }
         }
       }

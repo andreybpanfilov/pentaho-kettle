@@ -987,6 +987,11 @@ public class Const {
   public static final String KETTLE_DISABLE_CONSOLE_LOGGING = "KETTLE_DISABLE_CONSOLE_LOGGING";
 
   /**
+   * Set this variable to Y to disable standard Kettle buffer logging.
+   */
+  public static final String KETTLE_DISABLE_BUFFER_LOGGING = "KETTLE_DISABLE_BUFFER_LOGGING";
+
+  /**
    * Set this variable to with the intended repository name ( in repositories.xml )
    */
   public static final String KETTLE_REPOSITORY = "KETTLE_REPOSITORY";
